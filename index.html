@@ -305,11 +305,11 @@
           <div id="sync-input-container-webapp" class="space-y-3">
             <div>
               <label class="block text-[11px] font-bold text-gray-600 mb-1">🔗 Link Web App Database ABSENSI:</label>
-              <input type="url" id="sync-absensi-url" class="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-white" placeholder="https://script.google.com/macros/s/.../exec">
+              <input type="url" id="sync-absensi-url" class="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-white" placeholder="https://script.google.com/macros/s/AKfycbzlejabj.../exec">
             </div>
             <div>
               <label class="block text-[11px] font-bold text-gray-600 mb-1">🔗 Link Web App Database CATATAN SISWA:</label>
-              <input type="url" id="sync-catatan-url" class="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-white" placeholder="https://script.google.com/macros/s/.../exec">
+              <input type="url" id="sync-catatan-url" class="w-full border border-indigo-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-300 bg-white" placeholder="https://script.google.com/macros/s/AKfycbxWQoMmp.../exec">
             </div>
             <div class="flex gap-2 pt-1">
               <button type="button" onclick="saveDatabaseUrls()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5">
@@ -568,9 +568,8 @@
             <thead class="bg-gray-50 text-gray-700 border-b">
               <tr>
                 <th class="p-3">No</th>
-                <th class="p-3">Tanggal & Waktu</th>
+                <th class="p-3">Tanggal dan Waktu</th>
                 <th class="p-3">Nama Siswa</th>
-                <th class="p-3">Status Absensi</th>
                 <th class="p-3">Keterangan</th>
                 <th class="p-3 text-center">Aksi</th>
               </tr>
@@ -639,12 +638,12 @@
             <thead class="bg-gray-50 text-gray-700 border-b">
               <tr>
                 <th class="p-3">No</th>
-                <th class="p-3">Tanggal & Waktu</th>
-                <th class="p-3">Nama Siswa</th>
-                <th class="p-3">Pilihan</th>
-                <th class="p-3">Tipe Catatan</th>
-                <th class="p-3">Poin</th>
+                <th class="p-3">Tanggal</th>
+                <th class="p-3">Waktu</th>
+                <th class="p-3">Siswa</th>
+                <th class="p-3">Pilihan Tipe Catatan</th>
                 <th class="p-3">Keterangan</th>
+                <th class="p-3">Poin</th>
                 <th class="p-3 text-center">Aksi</th>
               </tr>
             </thead>
@@ -784,6 +783,8 @@
         const csvText = await response.text();
         const dataSiswa = parseCSV(csvText);
 
+        console.log("Data Siswa Berhasil Disinkronkan:", dataSiswa);
+
         let addedCount = 0;
         dataSiswa.forEach(item => {
           const nama = item["Nama Siswa"] || item["nama"] || item["Nama"] || Object.values(item)[0];
@@ -801,6 +802,7 @@
         }
 
       } catch (error) {
+        console.error("Error Sync:", error);
         if (statusDiv) {
           statusDiv.style.color = "#dc2626";
           statusDiv.innerText = "❌ Terjadi kesalahan saat sinkronisasi data.";
@@ -871,6 +873,7 @@
           document.getElementById('scanned-student-name').innerText = matched;
           document.getElementById('scanned-action-container').classList.remove('hidden');
           document.getElementById('input-student').value = matched;
+          showMsg('form-message', `🎯 [SCANNER EKSTERNAL] Siswa ${matched} Terdeteksi!`, false);
         } else {
           const todayIso = new Date().toISOString().split('T')[0];
           const alreadyAbsented = allRecords.some(r => r.type === 'absensi' && r.student.toLowerCase() === matched.toLowerCase() && r.isoDate === todayIso);
@@ -882,6 +885,7 @@
 
           addRecord(matched, 'absensi', 'Hadir', 0, 'Scan Scanner Eksternal');
           showBigNotification(matched, 'HADIR (Scanner Eksternal)');
+          showMsg('absensi-result-message', `🎯 [SCANNER EKSTERNAL] Presensi HADIR untuk ${matched} berhasil disimpan!`, false);
         }
       } else {
         showMsg('absensi-result-message', `⚠️ Kode: "${scannedCode}" tidak terdaftar di database!`, true);
@@ -974,10 +978,11 @@
           saveRecords();
           showMsg('sync-message', `✅ Sinkronisasi sukses! ${fetchedRecords.length} data rekap diperbarui dari 2 Spreadsheet.`, false);
         } else {
-          showMsg('sync-message', '⚠️ Berhasil terhubung, namun tidak ada data yang ditarik.', true);
+          showMsg('sync-message', '⚠️ Berhasil terhubung, namun tidak ada data yang ditarik. Pastikan doGet Web App aktif.', true);
         }
       } catch (error) {
-        showMsg('sync-message', '⚠️ Periksa URL Web App atau pastikan Apps Script Anda dipublikasikan sebagai Web App.', true);
+        console.warn("Gagal sinkronisasi otomatis Web App:", error);
+        showMsg('sync-message', '⚠️ Periksa URL Web App atau pastikan Apps Script Anda dipublikasikan sebagai Web App (Anyone).', true);
       }
     }
 
@@ -1016,7 +1021,7 @@
 
         parseAndLoadArrayData(combinedRows);
       } catch (error) {
-        showMsg('sync-message', '❌ Gagal menyinkronkan CSV dari URL.', true);
+        showMsg('sync-message', '❌ Gagal menyinkronkan CSV dari URL. Pastikan Google Sheet telah dipublikasikan ke Web (Format CSV).', true);
       }
     }
 
@@ -1054,7 +1059,7 @@
 
             parseAndLoadArrayData(allParsedRows);
           } catch (err) {
-            showMsg('sync-message', '❌ Gagal memproses file Excel.', true);
+            showMsg('sync-message', '❌ Gagal memproses file Excel. Pastikan format file valid.', true);
           }
         };
         reader.readAsArrayBuffer(file);
@@ -1083,36 +1088,35 @@
         if (!row || row.length < 2) return;
         
         const strRow = row.map(c => String(c).toLowerCase());
-        if (strRow.includes('nama') || strRow.includes('siswa')) {
+        if (strRow.includes('nama siswa') || strRow.includes('siswa')) {
           headerFound = true;
           return;
         }
 
-        if (headerFound) {
-          const date = String(row[1] || new Date().toLocaleDateString('id-ID')).trim();
-          const time = String(row[2] || new Date().toLocaleTimeString('id-ID')).trim();
-          const name = String(row[3] || '').trim();
-          if (!name || name.toLowerCase() === 'nama' || name.toLowerCase() === 'siswa') return;
+        if (headerFound && row[1]) {
+          const name = String(row[1] || '').trim();
+          if (!name || name === 'Nama Siswa') return;
 
-          const pilihan = String(row[4] || 'Hadir').trim();
+          const statusOrCat = String(row[2] || 'Hadir').trim();
           let points = 0;
           let type = 'absensi';
 
-          if (row.length >= 7 || pilihan.includes('Apresiasi') || pilihan.includes('Peringatan') || pilihan.includes('Izin')) {
-            const tipeCatatan = String(row[5] || '').trim();
-            points = parseInt(row[6]) || 0;
+          if (row.length >= 7 || statusOrCat.includes('Apresiasi') || statusOrCat.includes('Peringatan') || statusOrCat.includes('Izin')) {
+            points = parseInt(row[3]) || 0;
             type = points > 0 ? 'apresiasi' : points < 0 ? 'peringatan' : 'izin';
-            var notes = String(row[7] || '-').trim();
           } else {
             type = 'absensi';
-            var notes = String(row[5] || '-').trim();
           }
+
+          const time = String(row[3] || row[4] || new Date().toLocaleTimeString('id-ID')).trim();
+          const date = String(row[4] || row[5] || new Date().toLocaleDateString('id-ID')).trim();
+          const notes = String(row[5] || row[6] || '-').trim();
 
           parsedRecords.push({
             id: Date.now() + Math.random(),
             student: name,
             type: type,
-            statusOrCat: pilihan,
+            statusOrCat: statusOrCat,
             points: points,
             date: date,
             isoDate: new Date().toISOString().split('T')[0],
@@ -1128,7 +1132,7 @@
         saveRecords();
         showMsg('sync-message', `✅ Berhasil memperbarui ${parsedRecords.length} data rekap ke perangkat ini!`, false);
       } else {
-        showMsg('sync-message', '⚠️ Format data rekap tidak sesuai.', true);
+        showMsg('sync-message', '⚠️ Format data rekap tidak sesuai. Pastikan header memiliki kolom "Nama Siswa".', true);
       }
     }
 
@@ -1272,12 +1276,13 @@
       const alreadyAbsented = allRecords.some(r => r.type === 'absensi' && r.student.toLowerCase() === student.toLowerCase() && r.isoDate === todayIso);
 
       if (alreadyAbsented) {
-        showMsg('absensi-result-message', `⚠️ Siswa "${student}" sudah melakukan presensi hari ini!`, true);
+        showMsg('absensi-result-message', `⚠️ Siswa "${student}" sudah melakukan presensi hari ini dan tidak bisa absen ulang!`, true);
         return;
       }
 
       addRecord(student, 'absensi', status, 0, notes || '-');
       showBigNotification(student, `Status: ${status.toUpperCase()}`);
+      
       showMsg('absensi-result-message', `✅ Presensi "${status}" untuk ${student} berhasil disimpan!`, false);
       document.getElementById('absensi-notes').value = '';
       document.getElementById('absensi-student').value = '';
@@ -1337,6 +1342,7 @@
       saveRecords();
 
       const targetUrl = (type === 'absensi') ? urlAbsensiSheet : urlCatatanSheet;
+
       const dataKirim = {
           nama: student,
           keterangan: `${type.toUpperCase()} - ${statusOrCat} (${notes})`,
@@ -1352,9 +1358,11 @@
         fetch(targetUrl, {
             method: "POST",
             mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(dataKirim)
-        }).catch(error => {});
+        }).catch(error => console.error("Gagal mengirim data ke Google Sheet:", error));
       }
     }
 
@@ -1378,7 +1386,7 @@
             const alreadyAbsented = allRecords.some(r => r.type === 'absensi' && r.student.toLowerCase() === matched.toLowerCase() && r.isoDate === todayIso);
 
             if (alreadyAbsented) {
-              showMsg('absensi-result-message', `⚠️ ${matched} sudah absen hari ini.`, true);
+              showMsg('absensi-result-message', `⚠️ ${matched} sudah absen hari ini. Tidak bisa absen ulang!`, true);
               return;
             }
 
@@ -1387,12 +1395,14 @@
             addRecord(matched, 'absensi', 'Hadir', 0, 'Scan Barcode Kamera');
             
             showBigNotification(matched, 'HADIR (Scan Kamera)');
+            showMsg('absensi-result-message', `🎯 [OTOMATIS] Presensi HADIR untuk ${matched} berhasil disimpan!`, false);
           } else {
-            showMsg('absensi-result-message', `⚠️ Barcode: "${decodedText}" tidak terdaftar!`, true);
+            showMsg('absensi-result-message', `⚠️ Barcode / QR Code: "${decodedText}" tidak terdaftar!`, true);
           }
         },
         () => {}
       ).catch(err => {
+        alert("Gagal membuka kamera: " + err);
         stopCamera();
       });
     });
@@ -1431,10 +1441,13 @@
             document.getElementById('scanned-student-name').innerText = matched;
             document.getElementById('scanned-action-container').classList.remove('hidden');
             document.getElementById('input-student').value = matched;
+          } else {
+            showMsg('form-message', `⚠️ QR Code: "${decodedText}" tidak terdaftar di database.`, true);
           }
         },
         () => {}
       ).catch(err => {
+        alert("Gagal membuka kamera: " + err);
         stopCharCamera();
       });
     });
@@ -1509,7 +1522,6 @@
       return filtered;
     }
 
-    // --- RENDER TABEL ABSENSI (URUTAN: Tanggal & Waktu, Nama Siswa, Keterangan) ---
     function renderRecapAbsensiTable() {
       const tbody = document.getElementById('recap-absensi-table-body');
       tbody.innerHTML = '';
@@ -1524,10 +1536,12 @@
         tbody.innerHTML += `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3">${idx + 1}</td>
-            <td class="p-3">${r.date} <span class="text-xs text-gray-400 block">${r.time}</span></td>
+            <td class="p-3">${r.date} ${r.time}</td>
             <td class="p-3 font-medium text-gray-800">${r.student}</td>
-            <td class="p-3"><span class="px-2.5 py-1 text-xs rounded-full font-semibold ${badgeClass}">${r.statusOrCat}</span></td>
-            <td class="p-3">${r.notes}</td>
+            <td class="p-3">
+              <span class="px-2.5 py-1 text-xs rounded-full font-semibold ${badgeClass}">${r.statusOrCat}</span>
+              <span class="text-xs text-gray-500 ml-1">(${r.notes})</span>
+            </td>
             <td class="p-3 text-center">
               <button onclick="deleteRecord(${r.id})" class="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100" title="Hapus Catatan">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -1544,24 +1558,21 @@
       renderRecapAbsensiTable();
     }
 
-    // --- RENDER TABEL CATATAN KARAKTER (URUTAN: Tanggal & Waktu, Nama Siswa, Keterangan) ---
     function renderRecapCatatanTable() {
       const tbody = document.getElementById('recap-catatan-table-body');
       tbody.innerHTML = '';
       const filtered = getFilteredRecords('catatan');
 
       filtered.forEach((r, idx) => {
-        const tipeLabel = r.type === 'apresiasi' ? 'Apresiasi' : r.type === 'peringatan' ? 'Peringatan' : 'Izin Keluar';
-
         tbody.innerHTML += `
           <tr class="border-b hover:bg-gray-50">
             <td class="p-3">${idx + 1}</td>
-            <td class="p-3">${r.date} <span class="text-xs text-gray-400 block">${r.time}</span></td>
+            <td class="p-3">${r.date}</td>
+            <td class="p-3">${r.time}</td>
             <td class="p-3 font-medium text-gray-800">${r.student}</td>
             <td class="p-3"><span class="px-2 py-0.5 text-xs rounded font-semibold ${r.type === 'apresiasi' ? 'bg-green-100 text-green-700' : r.type === 'peringatan' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}">${r.statusOrCat}</span></td>
-            <td class="p-3 font-medium text-gray-700">${tipeLabel}</td>
-            <td class="p-3 font-bold ${r.points > 0 ? 'text-green-600' : 'text-red-600'}">${r.points > 0 ? '+' : ''}${r.points}</td>
             <td class="p-3">${r.notes}</td>
+            <td class="p-3 font-bold ${r.points > 0 ? 'text-green-600' : 'text-red-600'}">${r.points > 0 ? '+' : ''}${r.points}</td>
             <td class="p-3 text-center">
               <button onclick="deleteRecord(${r.id})" class="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100" title="Hapus Catatan">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -1693,16 +1704,18 @@
 
     function deleteSingleStudent(index) {
       const studentName = studentNames[index];
-      if (confirm(`Apakah Anda yakin ingin menghapus siswa "${studentName}"?`)) {
+      if (confirm(`Apakah Anda yakin ingin menghapus siswa "${studentName}" dari database?`)) {
         studentNames.splice(index, 1);
         saveStudents();
       }
     }
 
     function deleteAllStudents() {
-      if (confirm("⚠️ Apakah Anda yakin ingin menghapus SELURUH data siswa?")) {
-        studentNames = [];
-        saveStudents();
+      if (confirm("⚠️ PERINGATAN BERSYARAT:\nApakah Anda yakin ingin menghapus SELURUH data siswa?")) {
+        if (confirm("Tindakan ini tidak bisa dibatalkan. Hapus semua siswa sekarang?")) {
+          studentNames = [];
+          saveStudents();
+        }
       }
     }
 
@@ -1925,7 +1938,6 @@
       document.getElementById('stat-peringatan-num').innerText = allRecords.filter(r => r.type === 'peringatan').length;
     }
 
-    // --- EKSPOR EXCEL (URUTAN: Tanggal & Waktu, Nama Siswa, Keterangan) ---
     function exportToExcel(reportType) {
       const records = getFilteredRecords(reportType);
       if (records.length === 0) {
@@ -1945,15 +1957,14 @@
       ];
 
       if (isAbsen) {
-        excelRows.push(["No", "Tanggal & Waktu", "Nama Siswa", "Status Absensi", "Keterangan"]);
+        excelRows.push(["No", "Tanggal dan Waktu", "Nama Siswa", "Keterangan"]);
         records.forEach((r, idx) => {
-          excelRows.push([idx + 1, `${r.date} ${r.time}`, r.student, r.statusOrCat, r.notes]);
+          excelRows.push([idx + 1, `${r.date} ${r.time}`, r.student, `${r.statusOrCat} - ${r.notes}`]);
         });
       } else {
-        excelRows.push(["No", "Tanggal & Waktu", "Nama Siswa", "Pilihan", "Tipe Catatan", "Poin", "Keterangan"]);
+        excelRows.push(["No", "Tanggal", "Waktu", "Siswa", "Pilihan Tipe Catatan", "Keterangan", "Poin"]);
         records.forEach((r, idx) => {
-          const tipeLabel = r.type === 'apresiasi' ? 'Apresiasi' : r.type === 'peringatan' ? 'Peringatan' : 'Izin Keluar';
-          excelRows.push([idx + 1, `${r.date} ${r.time}`, r.student, r.statusOrCat, tipeLabel, r.points, r.notes]);
+          excelRows.push([idx + 1, r.date, r.time, r.student, r.statusOrCat, r.notes, r.points]);
         });
       }
 
@@ -1961,31 +1972,34 @@
       excelRows.push([]);
 
       if (isAbsen) {
-        excelRows.push(["", "", "", `${schoolMeta.city || 'Kota'}, ${todayDate}`]);
-        excelRows.push(["Mengetahui,", "", "", "Wali Kelas,"]);
+        excelRows.push(["", "", `${schoolMeta.city || 'Kota'}, ${todayDate}`]);
+        excelRows.push(["Mengetahui,", "", "Wali Kelas,"]);
         excelRows.push(["Kepala Sekolah,"]);
         excelRows.push([]); excelRows.push([]); excelRows.push([]);
-        excelRows.push([schoolMeta.headmasterName || '( ..................................... )', "", "", schoolMeta.teacherName || '( ..................................... )']);
-        excelRows.push([schoolMeta.headmasterNip ? `NIP. ${schoolMeta.headmasterNip}` : 'NIP. -', "", "", schoolMeta.teacherNip ? `NIP. ${schoolMeta.teacherNip}` : 'NIP. -']);
+        excelRows.push([schoolMeta.headmasterName || '( ..................................... )', "", schoolMeta.teacherName || '( ..................................... )']);
+        excelRows.push([schoolMeta.headmasterNip ? `NIP. ${schoolMeta.headmasterNip}` : 'NIP. -', "", schoolMeta.teacherNip ? `NIP. ${schoolMeta.teacherNip}` : 'NIP. -']);
       } else {
-        excelRows.push(["", "", "", "", "", `${schoolMeta.city || 'Kota'}, ${todayDate}`]);
-        excelRows.push(["Mengetahui,", "", "", "", "", "Wali Kelas,"]);
+        excelRows.push(["", "", "", "", "", "", `${schoolMeta.city || 'Kota'}, ${todayDate}`]);
+        excelRows.push(["Mengetahui,", "", "", "", "", "", "Wali Kelas,"]);
         excelRows.push(["Kepala Sekolah,"]);
         excelRows.push([]); excelRows.push([]); excelRows.push([]);
-        excelRows.push([schoolMeta.headmasterName || '( ..................................... )', "", "", "", "", schoolMeta.teacherName || '( ..................................... )']);
-        excelRows.push([schoolMeta.headmasterNip ? `NIP. ${schoolMeta.headmasterNip}` : 'NIP. -', "", "", "", "", schoolMeta.teacherNip ? `NIP. ${schoolMeta.teacherNip}` : 'NIP. -']);
+        excelRows.push([schoolMeta.headmasterName || '( ..................................... )', "", "", "", "", "", schoolMeta.teacherName || '( ..................................... )']);
+        excelRows.push([schoolMeta.headmasterNip ? `NIP. ${schoolMeta.headmasterNip}` : 'NIP. -', "", "", "", "", "", schoolMeta.teacherNip ? `NIP. ${schoolMeta.teacherNip}` : 'NIP. -']);
       }
 
       const worksheet = XLSX.utils.aoa_to_sheet(excelRows);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Laporan");
 
+      worksheet['!cols'] = isAbsen ? 
+        [{ wch: 6 }, { wch: 22 }, { wch: 30 }, { wch: 35 }] :
+        [{ wch: 6 }, { wch: 15 }, { wch: 12 }, { wch: 30 }, { wch: 22 }, { wch: 35 }, { wch: 10 }];
+
       const today = new Date().toISOString().split('T')[0];
       const fileName = isAbsen ? `Rekap_Absensi_${today}.xlsx` : `Rekap_Catatan_Karakter_${today}.xlsx`;
       XLSX.writeFile(workbook, fileName);
     }
 
-    // --- EKSPOR PDF (URUTAN: Tanggal & Waktu, Nama Siswa, Keterangan) ---
     function exportToPDF(reportType) {
       const records = getFilteredRecords(reportType);
       if (records.length === 0) {
@@ -2013,14 +2027,11 @@
       let bodyData = [];
 
       if (isAbsen) {
-        headers = [["No", "Tanggal & Waktu", "Nama Siswa", "Status Absensi", "Keterangan"]];
-        bodyData = records.map((r, i) => [i + 1, `${r.date} ${r.time}`, r.student, r.statusOrCat, r.notes]);
+        headers = [["No", "Tanggal dan Waktu", "Nama Siswa", "Keterangan"]];
+        bodyData = records.map((r, i) => [i + 1, `${r.date} ${r.time}`, r.student, `${r.statusOrCat} - ${r.notes}`]);
       } else {
-        headers = [["No", "Tanggal & Waktu", "Nama Siswa", "Pilihan", "Tipe Catatan", "Poin", "Keterangan"]];
-        bodyData = records.map((r, i) => {
-          const tipeLabel = r.type === 'apresiasi' ? 'Apresiasi' : r.type === 'peringatan' ? 'Peringatan' : 'Izin Keluar';
-          return [i + 1, `${r.date} ${r.time}`, r.student, r.statusOrCat, tipeLabel, r.points, r.notes];
-        });
+        headers = [["No", "Tanggal", "Waktu", "Siswa", "Pilihan Tipe Catatan", "Keterangan", "Poin"]];
+        bodyData = records.map((r, i) => [i + 1, r.date, r.time, r.student, r.statusOrCat, r.notes, r.points]);
       }
 
       const currentHex = themePalettes[currentTheme] ? themePalettes[currentTheme].primary : '#6366f1';
@@ -2032,7 +2043,7 @@
         theme: 'grid',
         headStyles: { fillColor: currentHex, textColor: 255, fontStyle: 'bold' },
         styles: { fontSize: 8, cellPadding: 2 },
-        columnStyles: { 0: { cellWidth: 8 } }
+        columnStyles: { 0: { cellWidth: 10 } }
       });
 
       let finalY = doc.lastAutoTable.finalY + 15;
@@ -2060,6 +2071,19 @@
       const fileName = isAbsen ? `Rekap_Absensi_${today}.pdf` : `Rekap_Catatan_Karakter_${today}.pdf`;
       doc.save(fileName);
     }
+
+    function showMsg(id, msg, isErr) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden', 'bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+      if (isErr) {
+        el.classList.add('bg-red-100', 'text-red-700');
+      } else {
+        el.classList.add('bg-green-100', 'text-green-700');
+      }
+      el.innerText = msg;
+    }
   </script>
+
 </body>
 </html>
