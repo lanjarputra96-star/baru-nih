@@ -1325,46 +1325,46 @@
       activeScannedStudent = "";
     }
 
-    function addRecord(student, type, statusOrCat, points, notes) {
-      const newRecord = {
-        id: Date.now(),
-        student: student,
-        type: type,
-        statusOrCat: statusOrCat,
-        points: points,
-        date: new Date().toLocaleDateString('id-ID'),
-        isoDate: new Date().toISOString().split('T')[0],
-        timestamp: Date.now(),
-        time: new Date().toLocaleTimeString('id-ID'),
-        notes: notes
-      };
-      allRecords.unshift(newRecord);
-      saveRecords();
+function addRecord(student, type, statusOrCat, points, notes) {
+  const newRecord = {
+    id: Date.now(),
+    student: student,
+    type: type,
+    statusOrCat: statusOrCat,
+    points: points,
+    date: new Date().toLocaleDateString('id-ID'),
+    isoDate: new Date().toISOString().split('T')[0],
+    timestamp: Date.now(),
+    time: new Date().toLocaleTimeString('id-ID'),
+    notes: notes
+  };
+  allRecords.unshift(newRecord);
+  saveRecords();
 
-      const targetUrl = (type === 'absensi') ? urlAbsensiSheet : urlCatatanSheet;
+  const targetUrl = (type === 'absensi') ? urlAbsensiSheet : urlCatatanSheet;
 
-      const dataKirim = {
-          nama: student,
-          keterangan: `${type.toUpperCase()} - ${statusOrCat} (${notes})`,
-          poin: points,
-          status: statusOrCat,
-          tipe: type,
-          catatan: notes,
-          waktu: newRecord.time,
-          tanggal: newRecord.date
-      };
+  // Objek data yang dikirim wajib konsisten dengan Apps Script
+  const dataKirim = {
+      nama: student,
+      status: statusOrCat,
+      tipe: type,
+      poin: points,
+      catatan: notes,
+      waktu: newRecord.time,
+      tanggal: newRecord.date
+  };
 
-      if (targetUrl && targetUrl.startsWith("http")) {
-        fetch(targetUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(dataKirim)
-        }).catch(error => console.error("Gagal mengirim data ke Google Sheet:", error));
-      }
-    }
+  if (targetUrl && targetUrl.startsWith("http")) {
+    fetch(targetUrl, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(dataKirim)
+    }).catch(error => console.error("Gagal mengirim data ke Google Sheet:", error));
+  }
+}
 
     document.getElementById('start-camera-btn').addEventListener('click', () => {
       const selectedFacingMode = document.getElementById('camera-source-select').value;
